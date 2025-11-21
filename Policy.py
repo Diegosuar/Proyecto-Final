@@ -23,14 +23,25 @@ class GameLogic:
                 return True
         return False
 
+    # JOHN: Optimización Vectorizada con NumPy
     def check_win(self, player_id):
-        # Implementación iterativa lenta (naive loop)
-        # Esto es lo que John optimizará después
+        b = self.board
+        # Horizontal
         for r in range(self.ROWS):
+            for c in range(self.COLS - 3):
+                if np.all(b[r, c:c+4] == player_id): return True
+        # Vertical
+        for r in range(self.ROWS - 3):
             for c in range(self.COLS):
-                if self.board[r][c] == player_id:
-                    # Check horizontal, vertical, diagonal... (Lento)
-                    pass 
+                if np.all(b[r:r+4, c] == player_id): return True
+        # Diagonal /
+        for r in range(self.ROWS - 3):
+            for c in range(self.COLS - 3):
+                if np.all(b[r:r+4, c:c+4].diagonal() == player_id): return True
+        # Diagonal \ (Anti-diagonal usando fliplr)
+        for r in range(3, self.ROWS): 
+            for c in range(self.COLS - 3):
+                if np.all(np.fliplr(b[r-3:r+1, c:c+4]).diagonal() == player_id): return True
         return False
 
     def is_terminal(self):
@@ -39,6 +50,7 @@ class GameLogic:
     def clone(self):
         return GameLogic(self.board, self.player_turn)
 
+# ... (Node y MCTSAgent siguen igual que V1 por ahora) ...
 class Node:
     def _init_(self, state, parent=None, move=None):
         self.state = state
@@ -48,14 +60,11 @@ class Node:
         self.wins = 0
         self.visits = 0
         self.untried_moves = state.get_valid_moves()
-
     def ucb1(self, c_param=1.414):
         if self.visits == 0: return float('inf')
         return (self.wins / self.visits) + c_param * np.sqrt(np.log(self.parent.visits) / self.visits)
-
     def select_child(self):
         return max(self.children, key=lambda c: c.ucb1())
-
     def expand(self):
         if not self.untried_moves: return None
         move = self.untried_moves.pop(0)
@@ -67,13 +76,9 @@ class Node:
 
 class MCTSAgent(Policy):
     def _init_(self):
-        self.simulations = 100 # Bucle fijo (El problema de Diego)
-
+        self.simulations = 100 
     def act(self, state):
         root = Node(GameLogic(state, 1))
-        # Bucle fijo susceptible a timeouts
         for _ in range(self.simulations):
-            node = root
-            # Selection, Expansion, Simulation, Backprop...
             pass
-        return random.choice(root.untried_moves if root.untried_moves else [0])
+        return 0
