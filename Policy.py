@@ -1,19 +1,18 @@
 import numpy as np
+import time
 import random
 from connect4.policy import Policy
 
+# ... (GameLogic vectorizado de John se mantiene) ...
 class GameLogic:
     ROWS = 6
     COLS = 7
     EMPTY = 0
-    
     def _init_(self, board_np, player_turn):
         self.board = board_np.copy()
         self.player_turn = player_turn
-
     def get_valid_moves(self):
         return [c for c in range(self.COLS) if self.board[0, c] == self.EMPTY]
-
     def make_move(self, col):
         if self.board[0, col] != self.EMPTY: return False
         for r in range(self.ROWS - 1, -1, -1):
@@ -22,35 +21,26 @@ class GameLogic:
                 self.player_turn *= -1 
                 return True
         return False
-
-    # JOHN: Optimización Vectorizada con NumPy
     def check_win(self, player_id):
         b = self.board
-        # Horizontal
         for r in range(self.ROWS):
             for c in range(self.COLS - 3):
                 if np.all(b[r, c:c+4] == player_id): return True
-        # Vertical
         for r in range(self.ROWS - 3):
             for c in range(self.COLS):
                 if np.all(b[r:r+4, c] == player_id): return True
-        # Diagonal /
         for r in range(self.ROWS - 3):
             for c in range(self.COLS - 3):
                 if np.all(b[r:r+4, c:c+4].diagonal() == player_id): return True
-        # Diagonal \ (Anti-diagonal usando fliplr)
         for r in range(3, self.ROWS): 
             for c in range(self.COLS - 3):
                 if np.all(np.fliplr(b[r-3:r+1, c:c+4]).diagonal() == player_id): return True
         return False
-
     def is_terminal(self):
         return self.check_win(1) or self.check_win(-1) or len(self.get_valid_moves()) == 0
-
     def clone(self):
         return GameLogic(self.board, self.player_turn)
 
-# ... (Node y MCTSAgent siguen igual que V1 por ahora) ...
 class Node:
     def _init_(self, state, parent=None, move=None):
         self.state = state
@@ -76,9 +66,21 @@ class Node:
 
 class MCTSAgent(Policy):
     def _init_(self):
-        self.simulations = 100 
+        self.time_limit = 0.45 # Default seguro
+
+    # DIEGO: Mount para calcular buffer
+    def mount(self, *args, **kwargs):
+        if args:
+            try:
+                val = float(args[0])
+                if 0 < val < 5.0: self.time_limit = val - 0.05
+            except: pass
+
     def act(self, state):
-        root = Node(GameLogic(state, 1))
-        for _ in range(self.simulations):
+        start_time = time.time()
+        
+        # DIEGO: Bucle dinámico basado en tiempo
+        while (time.time() - start_time) < self.time_limit:
+            # MCTS Logic...
             pass
         return 0
