@@ -3,26 +3,36 @@ import time
 import random
 from connect4.policy import Policy
 
-# ... (Clases GameLogic y Node se mantienen) ...
+# ... (Clases base) ...
 
 class MCTSAgent(Policy):
-    def _init_(self):
-        self.time_limit = 0.45 # Límite seguro
+    # ... (mount y init igual) ...
 
-    # Highlight 2: Buffer de seguridad implementado
-    def mount(self, *args, **kwargs):
-        if args:
-            try:
-                val = float(args[0])
-                if 0 < val < 5.0: self.time_limit = val - 0.05
-            except: pass
-
-    def act(self, state):
-        start_time = time.time()
-        # ... setup ...
+    # Highlight 1: Estrategia Híbrida (Smart Rollout)
+    def _simulate_hybrid(self, state):
+        curr_state = state.clone()
+        depth = 0
+        smart_depth_limit = 7 # Fase inteligente
         
-        # Highlight 2: Bucle controlado por tiempo
-        while (time.time() - start_time) < self.time_limit:
-            # ... MCTS logic ...
-            pass
-        return 0
+        while not curr_state.is_terminal():
+            valid = curr_state.get_valid_moves()
+            if not valid: break
+            
+            if depth < smart_depth_limit:
+                # 1. Verificar victoria inmediata (win_found)
+                # 2. Verificar bloqueo obligatorio (block_found)
+                # ... Lógica determinista ...
+                pass
+            
+            # Transición a aleatorio ponderado
+            chosen = random.choice(valid)
+            curr_state.make_move(chosen)
+            depth += 1
+        return curr_state
+
+    def _run_mcts(self, state):
+        # Implementación usando _simulate_hybrid
+        pass
+    
+    def act(self, state):
+        return self._run_mcts(state)
